@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    // Структура папок
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Среда выполнения (Node.js для main + DOM/Web Audio для renderer)
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+
+    // Отладка
+    "sourceMap": true,
+
+    // Строгость проверок
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
