@@ -5,10 +5,10 @@
     "outDir": "./dist",
 
     // Среда выполнения (Node.js для main + DOM/Web Audio для renderer)
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "target": "ES2025",
+    "lib": ["ES2025", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
 
     // Отладка
