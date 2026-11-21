@@ -1,7 +1,7 @@
-import { TrackPianoEvent } from "./TrackEvent.type";
+import { TrackPianoEvent } from "./TrackEvent.type.js";
 
 export interface TrackFile {
     name: string;
-    date: Date;
+    date: string;
     events: TrackPianoEvent[];
 }

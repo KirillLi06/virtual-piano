@@ -1,4 +1,4 @@
-import type { ElectronAPI } from '../../shared/ipc.js';
+import type { ElectronAPI } from '../../shared/ipc.ts';
 
 declare global {
   interface Window {

@@ -1,17 +1,20 @@
 {
   "name": "virtual-piano",
   "version": "1.0.0",
-  "description": "Hello World!",
+  "description": "Virtual Piano",
   "main": "main.ts",
+  "type": "module",
   "scripts": {
-    "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "tsc && electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
-  "author": "Jane Doe",
+  "author": "Kirill Li",
   "license": "MIT",
   "dependencies": {
     "electron": "^45.4.1",
-    "jiti": "^2.7.0"
+    "jiti": "^2.7.0",
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
     "@eslint/css": "^2.0.1",

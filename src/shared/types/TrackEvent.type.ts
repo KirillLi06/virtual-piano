@@ -1,10 +1,11 @@
-import { NoteCode } from "./NoteCode.type";
+import { NoteCode } from "./NoteCode.type.js";
 
-export type eventType = 'note' | 'pause';
-export type note = NoteCode | 'PAUSE'
+export type EventType = 'note' | 'pause';
+export type Note = NoteCode | 'PAUSE'
+export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 
 export interface TrackPianoEvent {
-    eventType: eventType;
-    note: note;
+    eventType: EventType;
+    note: Note;
     durationMs: number;
 }
