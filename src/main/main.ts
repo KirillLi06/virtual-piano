@@ -1,21 +1,24 @@
  import {app, BrowserWindow} from 'electron'
-
+import { registerIpcHandlers } from './ipcHandlers.js';
+import path from "node:path";
  const createWindow = () => {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
-            preload: 'Window',
+            preload: path.join(import.meta.dirname, "../preload/preload.cjs"),            
             contextIsolation: true,
-            nodeIntegration: true,
-            sandbox: true
-        }
+            nodeIntegration: false,
+            sandbox: true,
+        },
     });
 
     win.loadFile('index.html');
+    win.webContents.openDevTools();
  }
  
 app.whenReady().then(() => {
+    registerIpcHandlers();
     createWindow();
 
     app.on('activate', () => {

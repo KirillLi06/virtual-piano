@@ -12,6 +12,7 @@ export interface SaveTrackPayload {
 export interface SaveTrackResult {
   canceled: boolean;
   filePath?: string;
+  error?: string;
 }
 
 export interface LoadTrackResult {
@@ -19,6 +20,7 @@ export interface LoadTrackResult {
   filePath?: string;
   fileName?: string;
   content?: string;
+  error?: string;
 }
 
 export interface ElectronAPI {

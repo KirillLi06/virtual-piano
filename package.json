@@ -2,7 +2,7 @@
   "name": "virtual-piano",
   "version": "1.0.0",
   "description": "Virtual Piano",
-  "main": "main.ts",
+  "main": "dist/main/main.js",
   "type": "module",
   "scripts": {
     "start": "tsc && electron .",
