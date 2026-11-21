@@ -8,6 +8,16 @@ export interface NoteInfo {
   readonly keyHint: string;
 }
 
+export const ORDERED_NOTES: readonly NoteCode[] = [
+  'C4',
+  'D4',
+  'E4',
+  'F4',
+  'G4',
+  'A4',
+  'B4',
+] as const;
+
 export const NOTES_MAP: ReadonlyMap<NoteCode, NoteInfo> = new Map<NoteCode, NoteInfo>([
   ['C4', { code: 'C4', labelRu: 'До', frequency: 261.63, keyCodes: ['KeyA', 'Digit1'], keyHint: 'A / 1' }],
   ['D4', { code: 'D4', labelRu: 'Ре', frequency: 293.66, keyCodes: ['KeyS', 'Digit2'], keyHint: 'S / 2' }],
@@ -18,10 +28,23 @@ export const NOTES_MAP: ReadonlyMap<NoteCode, NoteInfo> = new Map<NoteCode, Note
   ['B4', { code: 'B4', labelRu: 'Си', frequency: 493.88, keyCodes: ['KeyJ', 'Digit7'], keyHint: 'J / 7' }],
 ]);
 
+export function isNoteCode(value: unknown): value is NoteCode {
+  return typeof value === 'string' && NOTES_MAP.has(value as NoteCode);
+}
+
 export function getFrequency(code: NoteCode): number {
   const info = NOTES_MAP.get(code);
   if (!info) {
     throw new Error(`Unknown note code: ${code}`);
   }
   return info.frequency;
+}
+
+export function getNoteByKeyCode(keyCode: string): NoteCode | undefined {
+  for (const [code, info] of NOTES_MAP) {
+    if (info.keyCodes.includes(keyCode)) {
+      return code;
+    }
+  }
+  return undefined;
 }

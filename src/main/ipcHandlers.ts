@@ -4,16 +4,17 @@ import {
   BrowserWindow,
   type IpcMainInvokeEvent,
   type OpenDialogOptions,
+  type SaveDialogOptions,
   app,
 } from "electron";
 import { writeFile, readFile, appendFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import {
   IPC_CHANNELS,
   type SaveTrackPayload,
   type SaveTrackResult,
   type LoadTrackResult,
 } from "../shared/ipc.js";
-import { join } from "node:path";
 
 const TRACK_FILTERS = [
   { name: "JSON треки", extensions: ["json"] },
@@ -31,7 +32,10 @@ async function handleSaveTrack(
   payload: SaveTrackPayload
 ): Promise<SaveTrackResult> {
   const win = BrowserWindow.fromWebContents(event.sender);
-  const options = { filters: TRACK_FILTERS };
+  const options: SaveDialogOptions = {
+    filters: TRACK_FILTERS,
+    ...(payload.defaultFileName ? { defaultPath: payload.defaultFileName } : {}),
+  };
 
   const { canceled, filePath } = win
     ? await dialog.showSaveDialog(win, options)
@@ -70,13 +74,17 @@ async function handleLoadTrack(
 
   try {
     const content = await readFile(filePath, "utf-8");
-    return { canceled: false, filePath, content };
+    return {
+      canceled: false,
+      filePath,
+      fileName: basename(filePath),
+      content,
+    };
   } catch (error) {
     console.error("Failed to load track:", error);
     return { canceled: false, error: String(error) };
   }
 }
-
 
 function getLogFilePath(): string {
   const dir = app.isPackaged ? app.getPath("userData") : process.cwd();
