@@ -12,11 +12,11 @@
   "author": "Kirill Li",
   "license": "MIT",
   "dependencies": {
-    "electron": "^45.4.1",
-    "jiti": "^2.7.0",
-    "typescript": "^7.0.2"
   },
   "devDependencies": {
+    "electron": "^45.4.1",
+    "jiti": "^2.7.0",
+    "typescript": "^7.0.2",
     "@eslint/css": "^2.0.1",
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.6",

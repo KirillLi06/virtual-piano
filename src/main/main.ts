@@ -13,7 +13,7 @@ import path from "node:path";
         },
     });
 
-    win.loadFile('index.html');
+    win.loadFile(path.join(import.meta.dirname, '../../index.html'));
     win.webContents.openDevTools();
  }
  
