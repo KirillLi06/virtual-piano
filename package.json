@@ -7,7 +7,9 @@
   "scripts": {
     "start": "tsc && electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "prettier": "npx prettier src --write",
+    "eslint": "npx eslint"
   },
   "author": "Kirill Li",
   "license": "MIT",

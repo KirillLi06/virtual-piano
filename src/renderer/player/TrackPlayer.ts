@@ -1,9 +1,10 @@
-import type { NoteCode } from '../../shared/types/NoteCode.type.js';
-import type { TrackFile } from '../../shared/types/TrackFile.type.js';
-import type { SoundSynthesizer } from '../audio/SoundSynthesizer.js';
-import type { AirLogger } from '../logger/AirLogger.js';
+import type { NoteCode } from "../../shared/types/NoteCode.type.js";
+import type { TrackPianoEvent } from "../../shared/types/TrackEvent.type.js";
+import type { TrackFile } from "../../shared/types/TrackFile.type.js";
+import type { SoundSynthesizer } from "../audio/SoundSynthesizer.js";
+import type { AirLogger } from "../logger/AirLogger.js";
 
-export type PlaybackState = 'idle' | 'playing';
+export type PlaybackState = "idle" | "playing";
 
 export interface TrackPlayerCallbacks {
   onStateChange?: (state: PlaybackState) => void;
@@ -15,9 +16,22 @@ export interface TrackPlayerCallbacks {
   onError?: (error: Error) => void;
 }
 
+interface ScheduledNote {
+  readonly note: NoteCode;
+  readonly startMs: number;
+  readonly endMs: number;
+}
+
+interface TimelineAction {
+  readonly timeMs: number;
+  readonly type: "on" | "off";
+  readonly note: NoteCode;
+}
+
 /**
- * Асинхронный проигрыватель треков с поддержкой немедленной отмены через AbortController.
- * Синхронизирует звучание SoundSynthesizer с колбэками подсветки клавиш и строки статуса.
+ * Асинхронный полифонический проигрыватель треков с поддержкой немедленной отмены
+ * через AbortController. Поддерживает как треки с явными временными метками
+ * startTimeMs (аккорды и перекрытия), так и последовательные треки без startTimeMs.
  */
 export class TrackPlayer {
   private readonly synthesizer: SoundSynthesizer;
@@ -37,13 +51,18 @@ export class TrackPlayer {
   /**
    * Запускает воспроизведение трека. Если уже идёт воспроизведение, предыдущее останавливается.
    */
-  public async play(track: TrackFile, callbacks: TrackPlayerCallbacks = {}): Promise<void> {
+  public async play(
+    track: TrackFile,
+    callbacks: TrackPlayerCallbacks = {},
+  ): Promise<void> {
     if (this.playing) {
       this.stop();
     }
 
     if (track.events.length === 0) {
-      this.logger?.warn(`Трек "${track.name}" не содержит событий для воспроизведения.`);
+      this.logger?.warn(
+        `Трек "${track.name}" не содержит событий для воспроизведения.`,
+      );
       callbacks.onComplete?.(track);
       return;
     }
@@ -51,44 +70,65 @@ export class TrackPlayer {
     const controller = new AbortController();
     this.abortController = controller;
     this.playing = true;
-    callbacks.onStateChange?.('playing');
+    callbacks.onStateChange?.("playing");
     this.logger?.info(
-      `Воспроизведение трека "${track.name}" начато (событий: ${track.events.length})`
+      `Воспроизведение трека "${track.name}" начато (событий: ${track.events.length})`,
     );
 
     const { signal } = controller;
-    let activeNote: NoteCode | null = null;
+    const activeNoteCounts = new Map<NoteCode, number>();
 
     try {
-      for (let i = 0; i < track.events.length; i++) {
-        if (signal.aborted) {
-          break;
+      const { actions, totalNotes, totalDurationMs } = buildTimeline(
+        track.events,
+      );
+
+      if (actions.length === 0) {
+        if (totalDurationMs > 0) {
+          await abortableDelay(totalDurationMs, signal);
         }
+      } else {
+        const playbackOrigin = performance.now();
+        let startedNotes = 0;
 
-        const event = track.events[i];
-        if (!event) {
-          continue;
-        }
+        for (const action of actions) {
+          if (signal.aborted) {
+            break;
+          }
 
-        callbacks.onProgress?.(i + 1, track.events.length);
+          const waitMs = action.timeMs - (performance.now() - playbackOrigin);
+          if (waitMs > 0) {
+            await abortableDelay(waitMs, signal);
+          }
 
-        if (event.eventType === 'note') {
-          activeNote = event.note;
-          this.synthesizer.noteOn(event.note);
-          callbacks.onNoteStart?.(event.note);
+          if (signal.aborted) {
+            break;
+          }
 
-          await abortableDelay(event.durationMs, signal);
-
-          this.synthesizer.noteOff(event.note);
-          callbacks.onNoteEnd?.(event.note);
-          activeNote = null;
-        } else {
-          await abortableDelay(event.durationMs, signal);
+          if (action.type === "on") {
+            const count = activeNoteCounts.get(action.note) ?? 0;
+            activeNoteCounts.set(action.note, count + 1);
+            this.synthesizer.noteOn(action.note);
+            callbacks.onNoteStart?.(action.note);
+            startedNotes += 1;
+            callbacks.onProgress?.(startedNotes, totalNotes);
+          } else {
+            const count = activeNoteCounts.get(action.note) ?? 0;
+            if (count <= 1) {
+              activeNoteCounts.delete(action.note);
+              this.synthesizer.noteOff(action.note);
+              callbacks.onNoteEnd?.(action.note);
+            } else {
+              activeNoteCounts.set(action.note, count - 1);
+            }
+          }
         }
       }
 
       if (signal.aborted) {
-        this.logger?.info(`Воспроизведение трека "${track.name}" остановлено пользователем.`);
+        this.logger?.info(
+          `Воспроизведение трека "${track.name}" остановлено пользователем.`,
+        );
         callbacks.onAbort?.(track);
       } else {
         this.logger?.info(`Воспроизведение трека "${track.name}" завершено.`);
@@ -104,16 +144,17 @@ export class TrackPlayer {
         callbacks.onError?.(error);
       }
     } finally {
-      if (activeNote !== null) {
-        this.synthesizer.noteOff(activeNote);
-        callbacks.onNoteEnd?.(activeNote);
+      for (const note of activeNoteCounts.keys()) {
+        this.synthesizer.noteOff(note);
+        callbacks.onNoteEnd?.(note);
       }
+      activeNoteCounts.clear();
       this.synthesizer.stopAll();
 
       if (this.abortController === controller) {
         this.abortController = null;
         this.playing = false;
-        callbacks.onStateChange?.('idle');
+        callbacks.onStateChange?.("idle");
       }
     }
   }
@@ -128,26 +169,80 @@ export class TrackPlayer {
   }
 }
 
+/**
+ * Преобразует список событий трека в отсортированную полифоническую очередь
+ * микрособытий (включение/выключение нот). Если у ноты не задан startTimeMs,
+ * она планируется последовательно после предыдущего курсора времени.
+ */
+function buildTimeline(events: readonly TrackPianoEvent[]): {
+  actions: TimelineAction[];
+  totalNotes: number;
+  totalDurationMs: number;
+} {
+  const scheduledNotes: ScheduledNote[] = [];
+  let cursorMs = 0;
+
+  for (const event of events) {
+    if (event.eventType === "pause") {
+      cursorMs += event.durationMs;
+      continue;
+    }
+
+    const startMs = event.startTimeMs ?? cursorMs;
+    const endMs = startMs + event.durationMs;
+    scheduledNotes.push({
+      note: event.note,
+      startMs,
+      endMs,
+    });
+    cursorMs = Math.max(cursorMs, endMs);
+  }
+
+  const actions: TimelineAction[] = [];
+  for (const item of scheduledNotes) {
+    actions.push({ timeMs: item.startMs, type: "on", note: item.note });
+    actions.push({ timeMs: item.endMs, type: "off", note: item.note });
+  }
+
+  // При совпадении времени сначала выполняем "off", затем "on",
+  // чтобы повторное нажатие той же ноты без паузы корректно перезапускалось.
+  actions.sort((a, b) => {
+    if (a.timeMs !== b.timeMs) {
+      return a.timeMs - b.timeMs;
+    }
+    if (a.type === b.type) {
+      return 0;
+    }
+    return a.type === "off" ? -1 : 1;
+  });
+
+  return {
+    actions,
+    totalNotes: scheduledNotes.length,
+    totalDurationMs: cursorMs,
+  };
+}
+
 function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) {
-    return Promise.reject(new DOMException('Playback aborted', 'AbortError'));
+    return Promise.reject(new DOMException("Playback aborted", "AbortError"));
   }
 
   return new Promise<void>((resolve, reject) => {
     const onAbort = (): void => {
       clearTimeout(timerId);
-      reject(new DOMException('Playback aborted', 'AbortError'));
+      reject(new DOMException("Playback aborted", "AbortError"));
     };
 
     const timerId = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
+      signal.removeEventListener("abort", onAbort);
       resolve();
     }, ms);
 
-    signal.addEventListener('abort', onAbort, { once: true });
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }
 
 function isAbortError(err: unknown): boolean {
-  return err instanceof DOMException && err.name === 'AbortError';
+  return err instanceof DOMException && err.name === "AbortError";
 }

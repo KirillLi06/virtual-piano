@@ -1,4 +1,4 @@
-export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
+export type LogLevel = "INFO" | "WARN" | "ERROR";
 
 export interface LogEntry {
   readonly timestamp: string;

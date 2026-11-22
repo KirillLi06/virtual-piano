@@ -25,16 +25,19 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.SAVE_TRACK, handleSaveTrack);
   ipcMain.handle(IPC_CHANNELS.LOAD_TRACK, handleLoadTrack);
   ipcMain.handle(IPC_CHANNELS.APPEND_LOG, handleAppendLog);
+  ipcMain.handle(IPC_CHANNELS.CLEAR_LOG, handleClearLog);
 }
 
 async function handleSaveTrack(
   event: IpcMainInvokeEvent,
-  payload: SaveTrackPayload
+  payload: SaveTrackPayload,
 ): Promise<SaveTrackResult> {
   const win = BrowserWindow.fromWebContents(event.sender);
   const options: SaveDialogOptions = {
     filters: TRACK_FILTERS,
-    ...(payload.defaultFileName ? { defaultPath: payload.defaultFileName } : {}),
+    ...(payload.defaultFileName
+      ? { defaultPath: payload.defaultFileName }
+      : {}),
   };
 
   const { canceled, filePath } = win
@@ -55,7 +58,7 @@ async function handleSaveTrack(
 }
 
 async function handleLoadTrack(
-  event: IpcMainInvokeEvent
+  event: IpcMainInvokeEvent,
 ): Promise<LoadTrackResult> {
   const win = BrowserWindow.fromWebContents(event.sender);
   const options: OpenDialogOptions = {
@@ -86,6 +89,14 @@ async function handleLoadTrack(
   }
 }
 
+async function handleClearLog(): Promise<void> {
+  try {
+    await writeFile(getLogFilePath(), "", "utf-8");
+  } catch (error) {
+    console.error("Failed to clear log:", error);
+  }
+}
+
 function getLogFilePath(): string {
   const dir = app.isPackaged ? app.getPath("userData") : process.cwd();
   return join(dir, "app_log.txt");
@@ -93,7 +104,7 @@ function getLogFilePath(): string {
 
 async function handleAppendLog(
   _event: IpcMainInvokeEvent,
-  line: string
+  line: string,
 ): Promise<void> {
   try {
     await appendFile(getLogFilePath(), `${line}\n`, "utf-8");

@@ -1,5 +1,5 @@
-import type { ElectronAPI } from '../../shared/ipc.js';
-import type { PianoController } from '../app/PianoController.js';
+import type { ElectronAPI } from "../../shared/ipc.js";
+import type { PianoController } from "../app/PianoController.js";
 
 declare global {
   interface Window {

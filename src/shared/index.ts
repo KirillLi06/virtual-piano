@@ -4,7 +4,7 @@ export {
   type SaveTrackResult,
   type LoadTrackResult,
   type ElectronAPI,
-} from './ipc.js';
+} from "./ipc.js";
 
 export {
   ORDERED_NOTES,
@@ -14,12 +14,12 @@ export {
   getNoteByKeyCode,
   type NoteCode,
   type NoteInfo,
-} from './types/NoteCode.type.js';
+} from "./types/NoteCode.type.js";
 
-export type { LogLevel, LogEntry } from './types/LogLevel.type.js';
+export type { LogLevel, LogEntry } from "./types/LogLevel.type.js";
 export type {
   TrackNoteEvent,
   TrackPauseEvent,
   TrackPianoEvent,
-} from './types/TrackEvent.type.js';
-export type { TrackFile } from './types/TrackFile.type.js';
+} from "./types/TrackEvent.type.js";
+export type { TrackFile } from "./types/TrackFile.type.js";

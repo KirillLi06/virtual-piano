@@ -1,12 +1,24 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Виртуальное пианино</title>
-    </head>
-    <body>
-        <h1>Тут будет виртуальное пианино</h1>
-        <p>👋</p>
-        <script type = "module" src = './dist/renderer/index.js'></script>
-    </body>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Виртуальное пианино</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header id="toolbar" class="toolbar" aria-label="Панель управления"></header>
+
+      <main class="stage">
+        <section id="keyboard" class="keyboard" aria-label="Виртуальная клавиатура"></section>
+      </main>
+
+      <section id="log-panel" class="log-panel" aria-label="Журнал событий"></section>
+
+      <footer id="status-bar" class="status-bar" aria-label="Строка состояния"></footer>
+    </div>
+
+    <script type="module" src="./dist/renderer/index.js"></script>
+  </body>
 </html>

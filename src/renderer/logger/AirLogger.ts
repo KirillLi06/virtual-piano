@@ -1,22 +1,15 @@
-import type { LogEntry, LogLevel } from '../../shared/types/LogLevel.type.js';
+import type { LogEntry, LogLevel } from "../../shared/types/LogLevel.type.js";
 
 export type LogListener = (entry: LogEntry) => void;
 export type LogClearListener = () => void;
 
 export interface AirLoggerOptions {
-  /** Максимальное число записей, хранимых в буфере для UI-панели. */
   maxEntries?: number;
-  /** Включить дублирование сообщений в console (удобно при разработке). */
   echoToConsole?: boolean;
 }
 
 const DEFAULT_MAX_ENTRIES = 500;
 
-/**
- * Подсистема журналирования AirLogger.
- * Хранит буфер записей для UI-панели, уведомляет подписчиков и
- * асинхронно дописывает строки в app_log.txt через IPC-мост electronAPI.
- */
 export class AirLogger {
   private readonly maxEntries: number;
   private readonly echoToConsole: boolean;
@@ -45,7 +38,7 @@ export class AirLogger {
       try {
         listener(entry);
       } catch (err) {
-        console.error('AirLogger listener error:', err);
+        console.error("AirLogger listener error:", err);
       }
     }
 
@@ -61,15 +54,15 @@ export class AirLogger {
   }
 
   public info(message: string): LogEntry {
-    return this.log('INFO', message);
+    return this.log("INFO", message);
   }
 
   public warn(message: string): LogEntry {
-    return this.log('WARN', message);
+    return this.log("WARN", message);
   }
 
   public error(message: string): LogEntry {
-    return this.log('ERROR', message);
+    return this.log("ERROR", message);
   }
 
   /** Возвращает снимок текущих записей в памяти (для первичной отрисовки LogPanel). */
@@ -84,8 +77,20 @@ export class AirLogger {
       try {
         listener();
       } catch (err) {
-        console.error('AirLogger clear listener error:', err);
+        console.error("AirLogger clear listener error:", err);
       }
+    }
+  }
+  public async clearAll(): Promise<void> {
+    this.clear();
+    const api = typeof window !== "undefined" ? window.electronAPI : undefined;
+    if (!api) {
+      return;
+    }
+    try {
+      await api.clearLog();
+    } catch (err) {
+      console.error("AirLogger IPC clearLog failed:", err);
     }
   }
 
@@ -111,36 +116,36 @@ export class AirLogger {
 
   private writeToConsole(level: LogLevel, line: string): void {
     switch (level) {
-      case 'INFO':
+      case "INFO":
         console.info(line);
         break;
-      case 'WARN':
+      case "WARN":
         console.warn(line);
         break;
-      case 'ERROR':
+      case "ERROR":
         console.error(line);
         break;
     }
   }
 
   private persistLine(line: string): void {
-    const api = typeof window !== 'undefined' ? window.electronAPI : undefined;
+    const api = typeof window !== "undefined" ? window.electronAPI : undefined;
     if (!api) {
       return;
     }
     void api.appendLog(line).catch((err: unknown) => {
-      console.error('AirLogger IPC appendLog failed:', err);
+      console.error("AirLogger IPC appendLog failed:", err);
     });
   }
 }
 
 function formatTimestamp(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  const ms = String(date.getMilliseconds()).padStart(3, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const ms = String(date.getMilliseconds()).padStart(3, "0");
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
 }

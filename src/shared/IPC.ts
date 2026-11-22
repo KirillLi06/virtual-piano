@@ -1,7 +1,8 @@
 export const IPC_CHANNELS = {
-  SAVE_TRACK: 'save-track',
-  LOAD_TRACK: 'load-track',
-  APPEND_LOG: 'append-log',
+  SAVE_TRACK: "save-track",
+  LOAD_TRACK: "load-track",
+  APPEND_LOG: "append-log",
+  CLEAR_LOG: "clear-log",
 } as const;
 
 export interface SaveTrackPayload {
@@ -27,4 +28,5 @@ export interface ElectronAPI {
   saveTrack: (payload: SaveTrackPayload) => Promise<SaveTrackResult>;
   loadTrack: () => Promise<LoadTrackResult>;
   appendLog: (line: string) => Promise<void>;
+  clearLog: () => Promise<void>;
 }

@@ -1,18 +1,21 @@
-import type { LoadTrackResult, SaveTrackResult } from '../../shared/ipc.js';
-import type { NoteCode } from '../../shared/types/NoteCode.type.js';
-import type { TrackFile } from '../../shared/types/TrackFile.type.js';
-import { SoundSynthesizer, type TimbreType } from '../audio/SoundSynthesizer.js';
-import { AirLogger } from '../logger/AirLogger.js';
-import { parseTrack, TrackParseError } from '../player/TrackParser.js';
-import { TrackPlayer } from '../player/TrackPlayer.js';
-import { TrackRecorder } from '../recorder/TrackRecorder.js';
+import type { LoadTrackResult, SaveTrackResult } from "../../shared/ipc.js";
+import type { NoteCode } from "../../shared/types/NoteCode.type.js";
+import type { TrackFile } from "../../shared/types/TrackFile.type.js";
+import {
+  SoundSynthesizer,
+  type TimbreType,
+} from "../audio/SoundSynthesizer.js";
+import { AirLogger } from "../logger/AirLogger.js";
+import { parseTrack, TrackParseError } from "../player/TrackParser.js";
+import { TrackPlayer } from "../player/TrackPlayer.js";
+import { TrackRecorder } from "../recorder/TrackRecorder.js";
 import {
   buildDefaultTrackFileName,
   serializeTrack,
   type TrackFormat,
-} from '../recorder/TrackSerializer.js';
+} from "../recorder/TrackSerializer.js";
 
-export type AppMode = 'ready' | 'recording' | 'playing' | 'error';
+export type AppMode = "ready" | "recording" | "playing" | "error";
 
 export interface AppStateSnapshot {
   readonly mode: AppMode;
@@ -38,7 +41,7 @@ export class PianoController {
   public readonly recorder: TrackRecorder;
   public readonly player: TrackPlayer;
 
-  private mode: AppMode = 'ready';
+  private mode: AppMode = "ready";
   private currentTrackName: string | null = null;
   private currentEventCount = 0;
   private lastError: string | null = null;
@@ -52,7 +55,7 @@ export class PianoController {
     this.recorder = new TrackRecorder({ logger: this.logger });
     this.player = new TrackPlayer(this.synthesizer, this.logger);
 
-    this.logger.info('Ядро приложения «Виртуальное пианино» инициализировано.');
+    this.logger.info("Ядро приложения «Виртуальное пианино» инициализировано.");
   }
 
   /** Возвращает снимок текущего состояния приложения для обновления UI. */
@@ -125,7 +128,7 @@ export class PianoController {
   /** Запускает запись нового трека (заблокировано во время воспроизведения). */
   public startRecording(trackName?: string): boolean {
     if (this.player.isPlaying()) {
-      this.logger.warn('Невозможно начать запись во время воспроизведения.');
+      this.logger.warn("Невозможно начать запись во время воспроизведения.");
       return false;
     }
     if (this.recorder.isRecording()) {
@@ -134,7 +137,7 @@ export class PianoController {
 
     this.lastError = null;
     this.recorder.start(trackName);
-    this.mode = 'recording';
+    this.mode = "recording";
     this.currentEventCount = 0;
     this.emitState();
     return true;
@@ -148,7 +151,7 @@ export class PianoController {
 
     this.releaseAllNotes();
     const track = this.recorder.stop();
-    this.mode = 'ready';
+    this.mode = "ready";
     this.currentTrackName = track.name;
     this.currentEventCount = track.events.length;
     this.emitState();
@@ -156,10 +159,12 @@ export class PianoController {
   }
 
   /** Сохраняет последний записанный трек на диск через IPC-диалог. */
-  public async saveRecording(format: TrackFormat = 'json'): Promise<SaveTrackResult> {
+  public async saveRecording(
+    format: TrackFormat = "json",
+  ): Promise<SaveTrackResult> {
     const track = this.recorder.getLastTrack();
     if (!track || track.events.length === 0) {
-      const msg = 'Нет записанных событий для сохранения.';
+      const msg = "Нет записанных событий для сохранения.";
       this.logger.warn(msg);
       return { canceled: true, error: msg };
     }
@@ -167,12 +172,15 @@ export class PianoController {
     const content = serializeTrack(track, format);
     const defaultFileName = buildDefaultTrackFileName(track.name, format);
 
-    const result = await window.electronAPI.saveTrack({ content, defaultFileName });
+    const result = await window.electronAPI.saveTrack({
+      content,
+      defaultFileName,
+    });
 
     if (result.error) {
       this.setError(`Ошибка сохранения файла: ${result.error}`);
     } else if (result.canceled) {
-      this.logger.info('Сохранение трека отменено пользователем.');
+      this.logger.info("Сохранение трека отменено пользователем.");
     } else if (result.filePath) {
       this.logger.info(`Трек сохранён: ${result.filePath}`);
     }
@@ -183,7 +191,7 @@ export class PianoController {
   /** Открывает диалог выбора файла трека, валидирует его и запускает воспроизведение. */
   public async loadAndPlayTrack(): Promise<LoadTrackResult> {
     if (this.recorder.isRecording()) {
-      this.logger.warn('Остановите запись перед загрузкой трека.');
+      this.logger.warn("Остановите запись перед загрузкой трека.");
       return { canceled: true };
     }
 
@@ -194,7 +202,7 @@ export class PianoController {
       return result;
     }
     if (result.canceled || result.content === undefined) {
-      this.logger.info('Загрузка трека отменена пользователем.');
+      this.logger.info("Загрузка трека отменена пользователем.");
       return result;
     }
 
@@ -220,7 +228,7 @@ export class PianoController {
   /** Воспроизводит уже распарсенный объект TrackFile. */
   public async playTrack(track: TrackFile): Promise<void> {
     if (this.recorder.isRecording()) {
-      this.logger.warn('Невозможно воспроизводить трек во время записи.');
+      this.logger.warn("Невозможно воспроизводить трек во время записи.");
       return;
     }
 
@@ -231,7 +239,7 @@ export class PianoController {
 
     await this.player.play(track, {
       onStateChange: (state) => {
-        this.mode = state === 'playing' ? 'playing' : 'ready';
+        this.mode = state === "playing" ? "playing" : "ready";
         this.emitState();
       },
       onNoteStart: (note) => {
@@ -252,8 +260,8 @@ export class PianoController {
   public stopPlayback(): void {
     this.player.stop();
     this.activeNotes.clear();
-    if (this.mode === 'playing') {
-      this.mode = 'ready';
+    if (this.mode === "playing") {
+      this.mode = "ready";
     }
     this.emitState();
   }
@@ -276,7 +284,7 @@ export class PianoController {
 
   private setError(message: string): void {
     this.lastError = message;
-    this.mode = 'error';
+    this.mode = "error";
     this.logger.error(message);
     this.emitState();
   }
@@ -287,7 +295,7 @@ export class PianoController {
       try {
         listener(snapshot);
       } catch (err) {
-        console.error('PianoController state listener error:', err);
+        console.error("PianoController state listener error:", err);
       }
     }
   }

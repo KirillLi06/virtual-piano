@@ -1,7 +1,12 @@
-import { getFrequency, NOTES_MAP, type NoteCode } from '../../shared/types/NoteCode.type.js';
-import type { AirLogger } from '../logger/AirLogger.js';
+import {
+  getFrequency,
+  NOTES_MAP,
+  type NoteCode,
+} from "../../shared/types/NoteCode.type.js";
+import type { AirLogger } from "../logger/AirLogger.js";
 
-export type TimbreType = 'periodic' | 'sine' | 'square' | 'sawtooth' | 'triangle';
+export type TimbreType =
+  "periodic" | "sine" | "square" | "sawtooth" | "triangle";
 
 interface ActiveVoice {
   oscillator: OscillatorNode;
@@ -55,7 +60,7 @@ export class SoundSynthesizer {
 
   constructor(options: SoundSynthesizerOptions = {}) {
     this.volume = clampVolume(options.initialVolume ?? 0.7);
-    this.timbre = options.initialTimbre ?? 'periodic';
+    this.timbre = options.initialTimbre ?? "periodic";
     this.attackTimeSec = options.attackTimeSec ?? 0.012;
     this.releaseTimeSec = options.releaseTimeSec ?? 0.025;
     this.logger = options.logger;
@@ -79,13 +84,15 @@ export class SoundSynthesizer {
       });
 
       this.logger?.info(
-        `AudioContext инициализирован (sampleRate=${ctx.sampleRate} Гц, тембр=${this.timbre})`
+        `AudioContext инициализирован (sampleRate=${ctx.sampleRate} Гц, тембр=${this.timbre})`,
       );
     }
 
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext.state === "suspended") {
       void this.audioContext.resume().catch((err: unknown) => {
-        this.logger?.error(`Не удалось возобновить AudioContext: ${String(err)}`);
+        this.logger?.error(
+          `Не удалось возобновить AudioContext: ${String(err)}`,
+        );
       });
     }
 
@@ -120,7 +127,10 @@ export class SoundSynthesizer {
 
     const gainNode = ctx.createGain();
     gainNode.gain.setValueAtTime(MIN_GAIN, now);
-    gainNode.gain.linearRampToValueAtTime(VOICE_PEAK_GAIN, now + this.attackTimeSec);
+    gainNode.gain.linearRampToValueAtTime(
+      VOICE_PEAK_GAIN,
+      now + this.attackTimeSec,
+    );
 
     oscillator.connect(gainNode);
     gainNode.connect(master);
@@ -221,7 +231,7 @@ export class SoundSynthesizer {
   /** Освобождает ресурсы AudioContext при закрытии приложения. */
   public async dispose(): Promise<void> {
     this.stopAll();
-    if (this.audioContext && this.audioContext.state !== 'closed') {
+    if (this.audioContext && this.audioContext.state !== "closed") {
       await this.audioContext.close();
     }
     this.audioContext = null;
@@ -231,9 +241,9 @@ export class SoundSynthesizer {
   }
 
   private applyTimbre(oscillator: OscillatorNode): void {
-    if (this.timbre === 'periodic' && this.periodicWave) {
+    if (this.timbre === "periodic" && this.periodicWave) {
       oscillator.setPeriodicWave(this.periodicWave);
-    } else if (this.timbre !== 'periodic') {
+    } else if (this.timbre !== "periodic") {
       oscillator.type = this.timbre;
     }
   }
