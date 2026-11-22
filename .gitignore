@@ -5,3 +5,4 @@ node_modules/
 dist/
 out/
 app_log.txt
+release/

@@ -9,7 +9,22 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "prettier": "npx prettier src --write",
-    "eslint": "npx eslint"
+    "eslint": "npx eslint",
+    "build:exe": "tsc && electron-builder"
+  },
+  "build": {
+    "appId": "com.kirillli.virtualpiano",
+    "productName": "Virtual Piano",
+    "win": {
+      "target": "portable"
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ]
   },
   "author": "Kirill Li",
   "license": "MIT",
@@ -19,6 +34,7 @@
     "@types/node": "^26.6.6",
     "@typescript/native": "npm:typescript@^7.0.2",
     "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
     "jiti": "^2.7.0",
